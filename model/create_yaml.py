@@ -48,7 +48,7 @@ def create_data_yaml(classes_txt: Path, output_yaml: Path) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate data.yaml for YOLO training.")
-    parser.add_argument("--classes", default="classes.txt",  help="Path to classes.txt (default: classes.txt)")
+    parser.add_argument("--classes", default="..\\table-schedule\\classes.txt",  help="Path to classes.txt (default: classes.txt)")
     parser.add_argument("--output",  default="data.yaml",    help="Output YAML path (default: data.yaml)")
     args = parser.parse_args()
     create_data_yaml(Path(args.classes), Path(args.output))

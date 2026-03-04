@@ -27,7 +27,7 @@ from train_val_split  import split_dataset      # step 1
 from create_yaml      import create_data_yaml   # step 2
 from train_model      import train_model        # step 3
 from test_model       import run_predict, display_results  # step 4
-from crop_predict     import crop_detections    # step 5
+from crop_predict     import crop_predictions    # step 5
 
 
 def banner(step: int, title: str) -> None:
@@ -51,6 +51,10 @@ def run_pipeline(
     skip:        list  = (),
     only:        int   = None,
 ) -> None:
+
+    model_dir = Path(__file__).resolve().parent
+    runs_detect_dir = model_dir / "runs" / "detect"
+    train_weights = runs_detect_dir / "train" / "weights" / "best.pt"
 
     def should_run(step: int) -> bool:
         if only is not None:
@@ -85,18 +89,21 @@ def run_pipeline(
     if should_run(4):
         banner(4, "Run Inference on Validation Set")
         predict_dir = run_predict(
-            weights="runs/detect/train/weights/best.pt",
+            weights=str(train_weights),
             source="data/validation/images",
             conf=conf,
+            project=str(runs_detect_dir),
+            name="predict",
         )
         display_results(predict_dir)
 
     # ── Step 5: Crop ──────────────────────────────────────────────────────────
     if should_run(5):
         banner(5, "Crop Detected Objects")
-        crop_detections(
-            predict_dir=Path("runs/detect/predict"),
-            class_id=class_id,
+        crop_predictions(
+            image_folder=runs_detect_dir / "predict",
+            output_folder=runs_detect_dir / "cropped_tables",
+            table_class_id=class_id,
             padding=padding,
         )
 

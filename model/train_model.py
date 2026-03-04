@@ -7,6 +7,7 @@ Usage:
 """
 
 import argparse
+from pathlib import Path
 
 import torch
 from ultralytics import YOLO
@@ -31,6 +32,8 @@ def train_model(
     imgsz: int = 640,
     patience: int = 15,
     batch: int = -1,  # -1 = auto-batch
+    project: str | None = None,
+    name: str = "train",
 ) -> None:
     """
     Train a YOLO model.
@@ -42,6 +45,8 @@ def train_model(
         imgsz:      Input image size.
         patience:   Early-stopping patience (epochs without improvement).
         batch:      Batch size. -1 lets Ultralytics auto-select based on VRAM.
+        project:    Base output folder for YOLO runs. Defaults to model/runs/detect.
+        name:       Run name folder inside project (default: train).
     """
     print("=" * 50)
     print("YOLO Training")
@@ -54,6 +59,9 @@ def train_model(
     device = get_device()
     model = YOLO(model_name)
 
+    if project is None:
+        project = str(Path(__file__).resolve().parent / "runs" / "detect")
+
     results = model.train(
         data=data_yaml,
         epochs=epochs,
@@ -61,11 +69,13 @@ def train_model(
         batch=batch,
         patience=patience,   # stop early if validation stops improving
         device=device,
+        project=project,
+        name=name,
         exist_ok=True,       # don't error if run folder already exists
     )
 
     print("\nTraining complete.")
-    print(f"Best weights saved to: runs/detect/train/weights/best.pt")
+    print(f"Best weights saved to: {Path(project) / name / 'weights' / 'best.pt'}")
     return results
 
 
@@ -77,6 +87,8 @@ if __name__ == "__main__":
     parser.add_argument("--imgsz",   type=int, default=640,help="Input image size")
     parser.add_argument("--patience",type=int, default=15, help="Early stopping patience")
     parser.add_argument("--batch",   type=int, default=-1, help="Batch size (-1 = auto)")
+    parser.add_argument("--project", default=None, help="YOLO output project dir (default: model/runs/detect)")
+    parser.add_argument("--name",    default="train", help="Run name folder (default: train)")
     args = parser.parse_args()
 
     train_model(
@@ -86,4 +98,6 @@ if __name__ == "__main__":
         imgsz=args.imgsz,
         patience=args.patience,
         batch=args.batch,
+        project=args.project,
+        name=args.name,
     )
