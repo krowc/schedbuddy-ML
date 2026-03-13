@@ -1,6 +1,11 @@
 .venv/
 model/__pycache__
 *.cache
+
 TODO.md
+
+model/data
+model/runs
+table-schedule
 
 *.pt
