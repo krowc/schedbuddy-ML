@@ -1,19 +1,11 @@
 .venv/
-*.pkl
-
-# Images
-*.jpg
-*.png
-*.pdf
-*.jpeg
-
-# Helpers
-__pycache__
-config.py
+*__pycache__
+*.cache
 
 TODO.md
 
-label-studio/data
-label-studio/runs
-label-studio/table-schedule
+model/data
+model/runs
+table-schedule
+
 *.pt
