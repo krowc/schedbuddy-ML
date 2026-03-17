@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from transformers import DetrImageProcessor, TableTransformerForObjectDetection
 
 import pytesseract
+from pathlib import Path
 
 class BorderlessTableDetection:
     def __init__(self, image_path, output_path, detection_model="microsoft/table-transformer-detection",
@@ -193,7 +194,9 @@ image_path = "3eec9544-151_table_1.jpg"
 detector = BorderlessTableDetection(image_path, "output.png")
 pipeline_output = detector.process_image(model_type="structure", threshold=0.9, show_plot=True, save_plot=True)
 
-# Example of downstream access for further processing
+# ------------------------------------
+# Extract structure
+# ------------------------------------
 detections = pipeline_output["plot"]["detections"]
 detections_output_path = "detections.json"
 
@@ -209,4 +212,117 @@ print(f"Detected columns: {len(columns)}")
 
 print(f"Detections saved to: {detections_output_path}")
 
+# ------------------------------------
+# Extract data
+# ------------------------------------
+try:
+    import pytesseract
+    OCR_READY = True
+except ImportError:
+    OCR_READY = False
 
+# Keep only true table columns (exclude column-header box from column list)
+table_rows = sorted(rows, key=lambda item: item["bbox"][1])
+table_columns = sorted(
+    [item for item in columns if item["label"].lower() == "table column"],
+    key=lambda item: item["bbox"][0],
+)
+column_headers = [item for item in columns if "header" in item["label"].lower()]
+
+def bbox_intersection(box_a, box_b):
+    x1 = max(box_a[0], box_b[0])
+    y1 = max(box_a[1], box_b[1])
+    x2 = min(box_a[2], box_b[2])
+    y2 = min(box_a[3], box_b[3])
+    if x2 <= x1 or y2 <= y1:
+        return None
+    return [int(round(x1)), int(round(y1)), int(round(x2)), int(round(y2))]
+
+
+def ocr_image(pil_image):
+    if not OCR_READY:
+        return ""
+    return pytesseract.image_to_string(pil_image, config="--oem 3 --psm 6")
+
+# Build row-wise table text while preserving column index
+header_names = [f"col_{idx + 1}" for idx in range(len(table_columns))]
+rows_as_dicts = []
+cell_records = []
+
+for row_index, row_item in enumerate(table_rows, start=1):
+    current_row = {}
+    for col_index, col_item in enumerate(table_columns, start=1):
+        cell_box = bbox_intersection(row_item["bbox"], col_item["bbox"])
+        if cell_box is None:
+            cell_text = ""
+        else:
+            crop = detector.image.crop(tuple(cell_box))
+            cell_text = ocr_image(crop)
+        
+        col_name = header_names[col_index - 1]
+        current_row[col_name] = cell_text
+        cell_records.append(
+            {
+                "row": row_index,
+                "column": col_index,
+                "bbox": cell_box,
+                "text": cell_text
+            }
+        )
+
+    rows_as_dicts.append(current_row)
+
+# If a column-header region exists, try OCR there to rename columns
+if column_headers:
+    header_box = column_headers[0]["bbox"]
+    extracted_headers = []
+    for col_item in table_columns:
+        hdr_cell = bbox_intersection(header_box, col_item["bbox"])
+        if hdr_cell is None:
+            extracted_headers.append("")
+        else:
+            header_crop = detector.image.crop(tuple(hdr_cell))
+            extracted_headers.append(ocr_image(header_crop))
+
+    if any(text.strip() for text in extracted_headers):
+        clean_headers = [
+            (text.strip() if text.strip() else f"col_{idx + 1}")
+            for idx, text in enumerate(extracted_headers)
+        ]
+        remapped_rows = []
+        for row_dict in rows_as_dicts:
+            remapped_rows.append(
+                {
+                    clean_headers[idx]: row_dict[header_names[idx]]
+                    for idx in range(len(header_names))
+                }
+            )
+        header_names = clean_headers
+        rows_as_dicts = remapped_rows
+
+# Save row-wise output
+output_dir = Path("extracted_data")
+output_dir.mkdir(parents=True, exist_ok=True)
+row_json_path = "table_text_by_row.json"
+
+with open(row_json_path, "w", encoding="utf-8") as f:
+    json.dump(
+        {
+            "headers": header_names,
+            "rows": rows_as_dicts,
+            "cells": cell_records,
+        },
+        f,
+        ensure_ascii=False,
+        indent=2,
+    )
+
+print(f"Rows: {len(table_rows)} | Columns: {len(table_columns)}")
+print(f"Saved JSON: {row_json_path}")
+
+if not OCR_READY:
+    print("pytesseract not installed. Install it to extract text:")
+    print("  %pip install pytesseract")
+    print("Also install Tesseract OCR app on Windows and set pytesseract.pytesseract.tesseract_cmd.")
+
+rows_as_dicts[:2]
