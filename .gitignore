@@ -2,10 +2,16 @@
 *__pycache__
 *.cache
 
+# For sample images
+*.jpg
+*.png
+
 TODO.md
 
 model/data
 model/runs
 table-schedule
+extracted-data
+detections.json
 
 *.pt
