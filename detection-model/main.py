@@ -25,7 +25,7 @@ def main() -> None:
 
     # Run structure recognition
     detections, _ = detector.process(
-        model_type="structure", threshold=0.9, show_plot=True, save_plot=True
+        model_type="structure", threshold=0.9, show_plot=False, save_plot=True
     )
 
     # Save raw detections
@@ -45,7 +45,6 @@ def main() -> None:
                 "ocr configuration:": TESSERACT_CONFIG,
                 "headers": table_data.headers,
                 "rows": table_data.rows,
-                "cells": table_data.cells
             },
             ensure_ascii=False,
             indent=2
