@@ -17,7 +17,7 @@ class Detection:
 @dataclass
 class CellRecord:
     row: int
-    columm: int
+    column: int
     bbox: Optional[list[int]]
     text: str
 

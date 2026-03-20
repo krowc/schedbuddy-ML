@@ -52,7 +52,7 @@ def extract_table(detector, detections: list[Detection]) -> TableData:
             text = ocr_crop(detector.image, box) if box else ""
             col_name = header_names[c_idx - 1]
             row_dict[col_name] = text
-            cell_records.append(CellRecord(row=r_idx, columm=c_idx, bbox=box, text=text))
+            cell_records.append(CellRecord(row=r_idx, column=c_idx, bbox=box, text=text))
         rows_as_dicts.append(row_dict)
 
     # Attempt to rename columns from detected header region
