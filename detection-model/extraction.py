@@ -65,11 +65,29 @@ def extract_table(detector, detections: list[Detection]) -> TableData:
     cell_records: list[CellRecord] = []
     rows_as_dicts: list[dict] = []
 
-    header_box = header_dets[0].bbox
-    extracted = []
-    for col in columns:
-        header_cell = bbox_intersection(header_box, col.bbox)
-        extracted.append(ocr_crop(detector.image, header_cell).strip())
+    for r_idx, row in enumerate(rows, 1):
+        row_dict: dict[str, str] = {}
+        for c_idx, col in enumerate(columns, 1):
+            box = bbox_intersection(row.bbox, col.bbox)
+            text = ocr_crop(detector.image, box) if box else ""
+            col_name = header_names[c_idx - 1]
+
+            if "col3" in col_name:
+                row_dict[col_name] = parse_units_cell(text)
+            else:
+                row_dict[col_name] = text
+                
+            cell_records.append(CellRecord(row=r_idx, column=c_idx, bbox=box, text=text))
+        rows_as_dicts.append(row_dict)
+
+    # Temporarily mode  header naming after the data extraction  as too many hardcoding is expected. 
+    # TODO: Find a way to parse Unit/Credit/Lec/Lab for sub-columning
+    if header_dets:
+        header_box = header_dets[0].bbox
+        extracted = []
+        for col in columns:
+            header_cell = bbox_intersection(header_box, col.bbox)
+            extracted.append(ocr_crop(detector.image, header_cell).strip())
 
     if any(extracted):
         clean = [t or f"col_{i + 1}" for i, t in enumerate(extracted)]
@@ -78,21 +96,6 @@ def extract_table(detector, detections: list[Detection]) -> TableData:
             for row in rows_as_dicts
         ]
         header_names = clean
-
-    for r_idx, row in enumerate(rows, 1):
-        row_dict: dict[str, str] = {}
-        for c_idx, col in enumerate(columns, 1):
-            box = bbox_intersection(row.bbox, col.bbox)
-            text = ocr_crop(detector.image, box) if box else ""
-            col_name = header_names[c_idx - 1]
-
-            if "Units" in col_name:
-                row_dict["Units"] = parse_units_cell(text)
-            else:
-                row_dict[col_name] = text
-                
-            cell_records.append(CellRecord(row=r_idx, column=c_idx, bbox=box, text=text))
-        rows_as_dicts.append(row_dict)
 
     logger.info("Extracted %d rows × %d columns", len(rows), n_cols)
     return TableData(
