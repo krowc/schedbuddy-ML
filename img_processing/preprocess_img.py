@@ -1,4 +1,4 @@
-"""schedule_preprocessor.py — Three-phase image preprocessing pipeline for student schedule OCR.
+"""preprocess_img.py — Three-phase image preprocessing pipeline for student schedule OCR.
 
 Implements a strict three-phase pipeline that prepares student schedule document images
 for reliable OCR ingestion:
