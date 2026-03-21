@@ -9,11 +9,12 @@ from dataclasses import asdict
 from detector import BorderlessTableDetector
 from extraction import extract_table
 from config import TESSERACT_CONFIG
+from logger import log_time
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
-
+@log_time
 def main() -> None:
     base_dir = Path(__file__).resolve().parent
     IMAGE_PATH = base_dir / "87ef5a9f-25_table_1.jpg"
