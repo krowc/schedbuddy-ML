@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 @log_time
 def main() -> None:
     base_dir = Path(__file__).resolve().parent
-    IMAGE_PATH = base_dir / "87ef5a9f-25_table_1.jpg"
+    IMAGE_PATH = base_dir / "test-images/8c5da3c8-105_table_1.jpg"
     OUTPUT_IMAGE = base_dir / "output.png"
     DETECTIONS_JSON = base_dir / "detections.json"
     TABLE_JSON = base_dir / "extracted_table.json"
