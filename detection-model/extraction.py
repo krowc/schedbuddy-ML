@@ -35,6 +35,64 @@ def expand_multiline_rows(row: dict[str, str]) -> list[dict[str, str]]:
     Given rows with multiline values separated by newlinein some columns, 
     expland into per-schedule-entry dicts. If a column has fewer lines than
     the max, the last known value is carried forward.
+    
+    FIXME: Current implementation repeats the entire row data changing only 
+    the values on multiline columns.
+
+    Current output:
+        {
+            "Code": "code",
+            "Subject": "subject",
+            "Units\nCredit Lee Lab": {
+                "Credit": 3.0,
+                "Lec": 2.0,
+                "Lab": 1.0
+            },
+            "Class": "class",
+            "Days": "TTh",
+            "Time": "04:00 PM - 07:00 PM",
+            "Room": "CS-02-104",
+            "Faculty": "faculty"
+            },
+            {
+            "Code": "code",
+            "Subject": "subject",
+            "Units\nCredit Lee Lab": {
+                "Credit": 3.0,
+                "Lec": 2.0,
+                "Lab": 1.0
+            },
+            "Class": "class",
+            "Days": "T",
+            "Time": "10:00 AM - 12:00 PM",
+            "Room": "CS-02-104",
+            "Faculty": "faculty"
+        }
+    Goal output:
+        {
+            "Code": "code",
+            "Subject": "subject",
+            "Units": {
+                "Credit": 3.0,
+                "Lec": 2.0,
+                "Lab": 1.0
+            },
+            "Class": "BSCS-3A",
+            "Schedules": [
+                {
+                    "Days": "day",
+                    "Time": "01:00 PM - 04:00 PM",
+                    "Room": "CS-02-201 CS-02-105",
+                    "Faculty": "class"
+                },
+                {
+                    "Days": "day",
+                    "Time": "01:00 PM - 04:00 PM",
+                    "Room": "CS-02-201 CS-02-105",
+                    "Faculty": "class"
+                }
+            ]
+        }
     """
 
     split_rows = {
